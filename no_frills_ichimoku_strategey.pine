@@ -1,0 +1,55 @@
+//@version=6
+strategy("No frills Ichimoku Strategy", overlay=true)
+
+// Ichimoku Input parameters
+tenkanPeriod = input.int(9, title="Tenkan-Sen Period")
+kijunPeriod = input.int(26, title="Kijun-Sen Period")
+senkouSpanBPeriod = input.int(52, title="Senkou Span B Period")
+displacement = input.int(26, title="Displacement")
+
+// Calculate Ichimoku components
+tenkanSen = (ta.highest(high, tenkanPeriod) + ta.lowest(low, tenkanPeriod)) / 2
+kijunSen = (ta.highest(high, kijunPeriod) + ta.lowest(low, kijunPeriod)) / 2
+senkouSpanA = (tenkanSen + kijunSen) / 2
+senkouSpanB = (ta.highest(high, senkouSpanBPeriod) + ta.lowest(low, senkouSpanBPeriod)) / 2
+senkouA_now = senkouSpanA[displacement - 1]
+senkouB_now = senkouSpanB[displacement - 1]
+senkouA_lagging = senkouSpanA[(displacement)*2]
+senkouB_lagging = senkouSpanB[(displacement)*2]
+frontCloudIsGreen = senkouSpanA > senkouSpanB
+laggingSpan = close
+laggingSpanOverCloud = laggingSpan > senkouA_lagging and laggingSpan > senkouB_lagging
+
+// Plot
+plot(tenkanSen, color=color.blue, title="Tenkan-Sen")  
+plot(kijunSen, color=color.red, title="Kijun-Sen")  
+plot(senkouSpanA, color=color.green, title="Senkou Span A", offset=displacement - 1)
+plot(senkouSpanB, color=color.orange, title="Senkou Span B", offset=displacement - 1)
+plot(close, color=color.purple, title="Chikou Span", offset=-displacement + 1)
+fill(plot(senkouSpanA, color=color.green, title="Senkou Span A", offset=displacement - 1), plot(senkouSpanB, color=color.orange, title="Senkou Span B", offset=displacement - 1), color=senkouSpanA > senkouSpanB ? color.new(color.green, 90) : color.new(color.red, 90))
+
+// Buy when leading cloud is green, lagging span is over cloud and price (hl2) is above front cloud
+buyCondition = (hl2 > senkouA_now and hl2 > senkouB_now) and frontCloudIsGreen and laggingSpanOverCloud
+
+// Sell when lagging span and price (hl2) goes under the cloud
+sellCondition = laggingSpan < senkouB_lagging and hl2 < senkouB_now
+
+// Stop-loss condition: Sell if price drops below the specified percentage of buy price
+var float buyPrice = na
+
+if buyCondition and na(buyPrice)
+    buyPrice := close
+    strategy.entry("Buy", strategy.long)
+
+stopLossCondition = not na(buyPrice) and hl2 < buyPrice * 0.9
+
+if (stopLossCondition or sellCondition)
+    buyPrice := na
+    strategy.close("Buy")
+
+// Plot buy/sell markers on the chart
+plotshape(series=sellCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal", text="Sell")
+plotshape(series=stopLossCondition, location=location.abovebar, color=color.orange, style=shape.labeldown, title="Stop Loss", text="SL :(")
+//plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy", text="Buy")
+
+
