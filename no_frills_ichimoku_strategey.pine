@@ -34,6 +34,9 @@ buyCondition = (hl2 > senkouA_now and hl2 > senkouB_now) and frontCloudIsGreen a
 // Sell when lagging span and price (hl2) goes under the cloud
 sellCondition = laggingSpan < senkouB_lagging and hl2 < senkouB_now
 
+// Warning: when lagging span is same or under the price within 5%
+yellowMarkerCondition = laggingSpan <= hl2[displacement - 1] * 1.05
+
 // Stop-loss condition: Sell if price drops below the specified percentage of buy price
 var float buyPrice = na
 
@@ -51,5 +54,4 @@ if (stopLossCondition or sellCondition)
 plotshape(series=sellCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal", text="Sell")
 plotshape(series=stopLossCondition, location=location.abovebar, color=color.orange, style=shape.labeldown, title="Stop Loss", text="SL :(")
 //plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy", text="Buy")
-
-
+plotshape(series=yellowMarkerCondition, location=location.belowbar, color=color.yellow, style=shape.labelup, title="Warning", text="W")
