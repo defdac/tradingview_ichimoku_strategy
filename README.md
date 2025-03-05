@@ -1,4 +1,4 @@
-# No frills Ichimoku Stragegy for Trading View
+# No frills Ichimoku Strategy for Trading View
 A TradingView long strategy made with PineScript
 
 ## Overview
