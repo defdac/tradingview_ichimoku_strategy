@@ -1,6 +1,8 @@
 # No frills Ichimoku Strategy for Trading View
 A TradingView long strategy made with PineScript
 
+![Plejd Ichimoku, Supertrend and Smart MA signals](Plejd.JPG)
+
 ## Overview
 
 * Buy when leading cloud is green, lagging span is over cloud and price (hl2) is above front cloud
