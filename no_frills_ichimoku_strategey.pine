@@ -1,19 +1,23 @@
 //@version=6
-strategy("No frills Ichimoku Strategy with Supertrend and Smart MA Crossover signals", overlay=true)
+strategy("No frills Ichimoku Strategy with Supertrend and Smart MA Crossover signals", calc_on_every_tick=true, overlay=true, initial_capital=80000, currency=currency.SEK, default_qty_type=strategy.percent_of_equity, default_qty_value=10, pyramiding=1, commission_type=strategy.commission.cash_per_order, commission_value=18, slippage=0, calc_on_order_fills=false, use_bar_magnifier=false, process_orders_on_close=false, backtest_fill_limits_assumption=2, behind_chart=false)
+
+// === Start Date Input ===
+startYear  = input.int(2023, "Start Year", minval=1900)
+startMonth = input.int(1, "Start Month", minval=1, maxval=12)
+startDay   = input.int(1, "Start Day", minval=1, maxval=31)
+startDate = timestamp("GMT+0", startYear, startMonth, startDay, 0, 0)
+inDateRange = time >= startDate
 
 // === General Setup ===
 atrPeriodGeneral = input.int(14, title="ATR Period", group="General Setup")
 atrGeneral = ta.atr(atrPeriodGeneral)
 
 // === Ichimoku Cloud ===
-
-// Ichimoku Input parameters
 tenkanPeriod = input.int(9, title="Tenkan-Sen Period", group="Ichimoku Cloud")
 kijunPeriod = input.int(26, title="Kijun-Sen Period", group="Ichimoku Cloud")
 senkouSpanBPeriod = input.int(52, title="Senkou Span B Period", group="Ichimoku Cloud")
 displacement = input.int(26, title="Displacement", group="Ichimoku Cloud")
 
-// Ichimoku Components
 tenkanSen = (ta.highest(high, tenkanPeriod) + ta.lowest(low, tenkanPeriod)) / 2
 kijunSen = (ta.highest(high, kijunPeriod) + ta.lowest(low, kijunPeriod)) / 2
 senkouSpanA = (tenkanSen + kijunSen) / 2
@@ -26,7 +30,6 @@ frontCloudIsGreen = senkouSpanA > senkouSpanB
 laggingSpan = close
 laggingSpanOverCloud = laggingSpan > senkouA_lagging and laggingSpan > senkouB_lagging
 
-// Ichimoku Plots
 plot(tenkanSen, color=color.blue, title="Tenkan-Sen")  
 plot(kijunSen, color=color.red, title="Kijun-Sen")  
 plot(senkouSpanA, color=color.green, title="Senkou Span A", offset=displacement - 1)
@@ -37,7 +40,6 @@ fill(plot(senkouSpanA, color=color.green, offset=displacement - 1, title="Span A
      plot(senkouSpanB, color=color.orange, offset=displacement - 1, title="Span B Fill"),
      color=frontCloudIsGreen ? color.new(color.green, 90) : color.new(color.red, 90))
 
-// === Ichimoku Buy/Sell Conditions ===
 buyCondition = (hl2 > senkouA_now and hl2 > senkouB_now) and frontCloudIsGreen and laggingSpanOverCloud
 sellCondition = laggingSpan < senkouB_lagging and hl2 < senkouB_now
 yellowMarkerCondition = laggingSpan <= hl2[displacement - 1] * 1.05
@@ -46,18 +48,15 @@ var int inPosition = -1
 var int closePosition = -1
 var float buyPrice = na
 
-// Buy Signal Condition (reset closePosition check)
-buySignalCondition = buyCondition and inPosition == -1
+buySignalCondition = buyCondition and inPosition == -1 and inDateRange
 
-// Buy logic
 if buySignalCondition
     buyPrice := close
     strategy.entry("Ichi Buy", strategy.long)
     inPosition := bar_index
 
-// Sell / Stop Loss logic
-stopLossCondition = inPosition > -1 and hl2 < buyPrice * 0.9
-sellSignalCondition = inPosition > -1 and sellCondition
+stopLossCondition = inPosition > -1 and hl2 < buyPrice * 0.9 and inDateRange
+sellSignalCondition = inPosition > -1 and sellCondition and inDateRange
 
 if stopLossCondition or sellSignalCondition
     buyPrice := na
@@ -65,20 +64,16 @@ if stopLossCondition or sellSignalCondition
     closePosition := bar_index
     inPosition := -1
 
-// Ichimoku Plot Signals
-
-if buySignalCondition
+if buySignalCondition and inDateRange
     label.new(bar_index + 1, hl2 - atrGeneral*4, 'Ichi Buy', color=color.green, style=label.style_label_up)
-if sellSignalCondition
+if sellSignalCondition and inDateRange
     label.new(bar_index + 1, hl2 + atrGeneral*4, 'Ichi Sell', color=color.red, style=label.style_label_down)
-if stopLossCondition
+if stopLossCondition and inDateRange
     label.new(bar_index + 1, hl2 + atrGeneral*4, 'Stop Loss', color=color.orange, style=label.style_label_down)
 
-
 // === SUPER TREND (Plot-Only Signals) ===
-
 atrPeriodSuperTrend = input.int(10, title="ATR Period for Supertrend", group="Supertrend")
-factor = input.float(3.0, title="Factor", step=0.1, group="Supertrend")
+factor = input.float(4.0, title="Factor", step=0.1, group="Supertrend")
 
 atrSuperTrend = ta.atr(atrPeriodSuperTrend)
 upperBasic = hl2 - factor * atrSuperTrend
@@ -96,17 +91,14 @@ supertrendLine = trend == 1 ? lowerBand : upperBand
 supertrendBuySignal = trend == 1 and trend[1] == -1
 supertrendSellSignal = trend == -1 and trend[1] == 1
 
-//plot(supertrendLine, "Supertrend Line", color=trend == 1 ? color.orange : color.purple, linewidth=2)
 bgcolor(trend == 1 ? color.new(color.green, 92) : color.new(color.red, 92), title="Smart MA Background")
 
-if supertrendBuySignal
+if supertrendBuySignal and inDateRange
     label.new(bar_index, hl2 - atrSuperTrend, 'ST Buy', color=color.new(color.green, 70), style=label.style_label_up)
-if supertrendSellSignal
+if supertrendSellSignal and inDateRange
     label.new(bar_index, hl2 + atrSuperTrend, 'ST Sell', color=color.new(color.red, 70), style=label.style_label_down)
 
-
 // === SMART MA CROSSOVER (Plot-Only Signals) ===
-
 import ZenAndTheArtOfTrading/ZenLibrary/9 as zen
 
 lengthOfMA = input.int(50, 'MA Length', group="Smart MA Crossover")
@@ -122,11 +114,8 @@ atrSMAC = ta.atr(atrPeriodSMAC)
 smartMACrossoverBuySignal = close > ma and close[1] > ma and close > open * 1.005 and close[3] < ma and volume > smaVolume
 smartMACrossoverSellSignal = close < ma and close[1] < ma and close < open * 0.995 and close[3] > ma and volume > smaVolume
 
-//plot(ma, color=close > ma ? maColorUp : maColorDown, title="Smart MA")
-//bgcolor(close > ma ? color.new(color.green, 92) : color.new(color.red, 92), title="Smart MA Background")
-
-if smartMACrossoverBuySignal
+if smartMACrossoverBuySignal and inDateRange
     label.new(bar_index, low - atrSMAC * 1, 'MA Buy', color=color.new(color.green, 70), style=label.style_label_up)
 
-if smartMACrossoverSellSignal
+if smartMACrossoverSellSignal and inDateRange
     label.new(bar_index, high + atrSMAC * 1, 'MA Sell', color=color.new(color.red, 70), style=label.style_label_down)
