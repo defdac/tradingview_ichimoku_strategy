@@ -11,6 +11,6 @@ A TradingView long strategy made with PineScript
 
 ## Updates
 
-- 2025-06-05: Adds strategy starting values and start date to limit back tester
-- 2025-03-22: Adds Supetrend and Smart MA signals
+- 2025-06-05: Adds strategy starting values and start date to limit back tester + lagging span swim marker setting
+- 2025-03-22: Adds Supertrend and Smart MA signals
 - 2025-03-05: Added warning marker when the lagging span in starting to swim within 5% of the price
