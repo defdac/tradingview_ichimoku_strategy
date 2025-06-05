@@ -11,6 +11,7 @@ inDateRange = time >= startDate
 // === General Setup ===
 atrPeriodGeneral = input.int(14, title="ATR Period", group="General Setup")
 atrGeneral = ta.atr(atrPeriodGeneral)
+showLaggingSpanWarnings = input.bool(true, title="Show Lagging Span Warnings", group="Ichimoku Cloud")
 
 // === Ichimoku Cloud ===
 tenkanPeriod = input.int(9, title="Tenkan-Sen Period", group="Ichimoku Cloud")
@@ -42,7 +43,10 @@ fill(plot(senkouSpanA, color=color.green, offset=displacement - 1, title="Span A
 
 buyCondition = (hl2 > senkouA_now and hl2 > senkouB_now) and frontCloudIsGreen and laggingSpanOverCloud
 sellCondition = laggingSpan < senkouB_lagging and hl2 < senkouB_now
+
 yellowMarkerCondition = laggingSpan <= hl2[displacement - 1] * 1.05
+plotshape(series=showLaggingSpanWarnings and yellowMarkerCondition, location=location.belowbar, color=color.yellow, style=shape.labelup, title="Warning", text="W")
+
 
 var int inPosition = -1
 var int closePosition = -1
