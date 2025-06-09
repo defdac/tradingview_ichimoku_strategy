@@ -44,7 +44,9 @@ fill(plot(senkouSpanA, color=color.green, offset=displacement - 1, title="Span A
 buyCondition = (hl2 > senkouA_now and hl2 > senkouB_now) and frontCloudIsGreen and laggingSpanOverCloud
 sellCondition = laggingSpan < senkouB_lagging and hl2 < senkouB_now
 
-yellowMarkerCondition = laggingSpan <= hl2[displacement - 1] * 1.05
+
+yellowMarkerCondition = not na(close[displacement]) and close < close[displacement]
+
 plotshape(series=showLaggingSpanWarnings and yellowMarkerCondition, location=location.belowbar, color=color.yellow, style=shape.labelup, title="Warning", text="W")
 
 
